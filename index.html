@@ -1,0 +1,55 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PTO Leave Manager · Nae Kitakado</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--cocoa:#5B3A3A;--ink:#3E2A2F;--mauve:#8A6470;--blush:#FBE3EC;--pink:#F4B4CD;--rose:#F2A7C3;--card:#fff;--bg:#FDF4F7;--line:#F3D3DF}
+*{box-sizing:border-box}body{margin:0;font-family:'DM Sans',Inter,sans-serif;color:var(--ink);background:var(--bg)}
+.wrap{max-width:1080px;margin:0 auto;padding:24px 16px 48px}
+.hero{background:linear-gradient(120deg,var(--blush),var(--pink));border-radius:24px;padding:28px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.3)}
+.tag{display:inline-block;background:#fff;color:var(--cocoa);font-size:12px;letter-spacing:.14em;font-weight:600;border-radius:99px;padding:4px 12px}
+h1{color:var(--cocoa);font-size:clamp(28px,5vw,44px);margin:10px 0 6px;font-weight:600}
+.hero p{margin:0;max-width:640px;position:relative;z-index:1}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px}@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
+h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--cocoa);margin:0 0 12px}
+label{font-size:13px;font-weight:600;color:var(--mauve);display:block;margin:10px 0 4px}
+select,textarea,input{width:100%;font:inherit;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;color:var(--ink)}
+input[type=range],input[type=checkbox]{accent-color:var(--cocoa)}textarea{min-height:120px;resize:vertical}
+button{background:var(--cocoa);color:#fff;border:0;border-radius:99px;padding:11px 20px;font:inherit;font-weight:600;letter-spacing:.06em;cursor:pointer;margin-top:12px}
+button.ghost{background:#fff;color:var(--cocoa);border:1px solid var(--rose)}
+.pill{display:inline-block;border-radius:99px;padding:3px 10px;font-size:12px;font-weight:600;margin:2px}
+.high{background:#F9D0D6;color:#8A2C3A}.medium{background:#FCE6C8;color:#7A4E12}.low{background:#DDF1E4;color:#1E5A36}
+ul{padding-left:18px;margin:6px 0}li{margin:4px 0}li::marker{color:var(--rose)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}th{color:var(--mauve)}
+.kpi{display:flex;gap:10px;flex-wrap:wrap}.kpi div{flex:1;min-width:120px;background:var(--blush);border-radius:14px;padding:12px}.kpi b{display:block;font-size:24px;color:var(--cocoa)}
+pre{background:#2E1F23;color:#FBE3EC;border-radius:12px;padding:12px;font-size:12px;overflow:auto;max-height:320px}
+footer{text-align:center;font-size:13px;color:var(--mauve);margin-top:28px}a{color:var(--cocoa)}
+.muted{color:var(--mauve);font-size:13px}
+</style></head><body><div class="wrap">
+<div class="hero"><span class="tag">LIVE DEMO</span><h1>PTO Leave Manager</h1><p>A free leave-management system with role-based views. Submit a request, switch between Manager, HR and Teammate to approve it, and see how protected leave stays private while the calendar and chat update automatically.</p></div><div class="grid"><div class="card"><h2>1 · Request leave (employee)</h2>
+<label>Employee</label><select id="emp"></select>
+<label>Leave type</label><select id="ty"><option>Vacation</option><option>Sick</option><option>Bereavement (protected)</option><option>Medical (protected)</option></select>
+<label>Start</label><input id="s" type="date" value="2026-12-21"><label>End</label><input id="e" type="date" value="2026-12-24">
+<button onclick="req()">SUBMIT REQUEST</button></div>
+<div class="card"><h2>2 · Balances</h2><table id="bal"></table></div></div>
+<div class="card" style="margin-top:18px"><h2>Approvals queue · viewing as <select id="role" onchange="draw()" style="width:auto;display:inline-block"><option>Manager</option><option>HR</option><option>Teammate</option></select></h2><div id="q"></div></div>
+<div class="grid"><div class="card"><h2>Team calendar</h2><div id="cal"></div></div><div class="card"><h2>Integrations log</h2><div id="log" class="muted">Calendar, chat, email and HRIS events appear here.</div></div></div>
+<script>
+const $=i=>document.getElementById(i);const E={"Ava Reyes":15,"Ben Cruz":12,"Cara Lim":9};const used={"Ava Reyes":3,"Ben Cruz":0,"Cara Lim":6};const R=[],log=[];
+Object.keys(E).forEach(n=>$("emp").add(new Option(n)));
+const days=(a,b)=>{let n=0;for(let d=new Date(a);d<=new Date(b);d.setDate(d.getDate()+1))if(d.getDay()%6)n++;return n};
+function L(m){log.unshift(`<div style="padding:4px 0;border-bottom:1px solid var(--line)">${m}</div>`);$("log").innerHTML=log.join("")}
+function req(){const n=$("emp").value,t=$("ty").value,d=days($("s").value,$("e").value);if(d<=0)return alert("Pick a valid range");
+ const left=E[n]-used[n];if(t=="Vacation"&&d>left){L(`⛔ ${n}: ${d} days requested, only ${left} left. Blocked before approval.`);return}
+ const clash=R.filter(r=>r.status!="rejected"&&r.n!=n&&!(r.e<$("s").value||r.s>$("e").value));
+ R.push({n,t,s:$("s").value,e:$("e").value,d,status:"pending manager",prot:t.includes("protected"),clash:clash.map(c=>c.n)});L(`📨 Request from ${n} (${d} days) sent to manager by email + chat`);draw()}
+function act(i,ok){const r=R[i];if(!ok){r.status="rejected";L(`❌ ${r.n}'s request rejected, employee notified`)}else if(r.status=="pending manager"){r.status="pending HR";L(`✅ Manager approved ${r.n} → HR (dual approval)`)}else{r.status="approved";if(r.t=="Vacation")used[r.n]+=r.d;L(`✅ HR approved ${r.n} · 📅 calendar event created · 💬 posted to #out-of-office · 🔄 synced to HRIS`)}draw()}
+function draw(){const role=$("role").value;
+ $("bal").innerHTML="<tr><th>Employee</th><th>Allowance</th><th>Used</th><th>Left</th></tr>"+Object.keys(E).map(n=>`<tr><td>${n}</td><td>${E[n]}</td><td>${used[n]}</td><td><b>${E[n]-used[n]}</b></td></tr>`).join("");
+ $("q").innerHTML=R.length?"<table><tr><th>Employee</th><th>Type</th><th>Dates</th><th>Days</th><th>Status</th><th></th></tr>"+R.map((r,i)=>{const hide=r.prot&&role=="Teammate";const can=(role=="Manager"&&r.status=="pending manager")||(role=="HR"&&r.status=="pending HR");
+ return`<tr><td>${r.n}</td><td>${hide?"Time off":r.t}${r.prot&&!hide?' <span class="pill medium">protected</span>':''}</td><td>${r.s} → ${r.e}${r.clash.length?`<br><span class="pill high">overlaps ${r.clash.join(", ")}</span>`:''}</td><td>${r.d}</td><td><span class="pill ${r.status=='approved'?'low':r.status=='rejected'?'high':'medium'}">${r.status}</span></td><td>${can?`<button style="padding:5px 12px;margin:0" onclick="act(${i},1)">Approve</button> <button class="ghost" style="padding:5px 12px;margin:0" onclick="act(${i},0)">Reject</button>`:''}</td></tr>`}).join("")+"</table>":"<span class='muted'>No requests yet.</span>";
+ $("cal").innerHTML=R.filter(r=>r.status=="approved").map(r=>`<div>📅 <b>${r.n}</b> · ${role=="Teammate"&&r.prot?"Out of office":r.t} · ${r.s} → ${r.e}</div>`).join("")||"<span class='muted'>No approved leave yet.</span>"}
+draw();
+</script>
+<footer>Built by <b>Nae Kitakado</b>, AI Automation Consultant · <a href="https://github.com/naekitakadoportfolio">GitHub</a> · <a href="https://www.linkedin.com/in/nae-k-203194265">LinkedIn</a> · <a href="https://sider.ai/agents/web-creator/share/695ea81100a621619985fdfb">Portfolio</a><br>All data is fictional. This demo runs entirely in your browser.</footer></div></body></html>
